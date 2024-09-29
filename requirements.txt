@@ -6,4 +6,5 @@ torchaudio==2.4.1+cpu
 nltk==3.7
 google-generativeai==0.3.0
 gunicorn==20.1.0
-transformers==4.29.0  # Avoid requiring tokenizers
+transformers==4.28.0  # Older version that might avoid the Rust dependency
+tokenizers==0.13.2  # Use this older version to avoid Rust dependency
