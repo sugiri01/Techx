@@ -1,9 +1,6 @@
 
-Flask
-Flask-Cors
-requests
-gunicorn
-transformers
-torch
-nltk
-google-generativeai
+Flask==2.1.0
+transformers==4.30.0
+torch==1.12.0
+nltk==3.7
+google-generativeai==0.3.0
