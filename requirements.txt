@@ -7,4 +7,4 @@ nltk==3.7
 google-generativeai==0.3.0
 gunicorn==20.1.0
 transformers==4.30.0
-tokenizers==0.13.3
+tokenizers==0.15.2
