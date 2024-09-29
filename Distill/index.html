@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Response Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .feedback-section { 
+            margin-bottom: 1.5em; 
+        }
+        .feedback-title { 
+            font-size: 1.1em; 
+            margin-bottom: 0.5em; 
+        }
+        .feedback-content { 
+            white-space: pre-wrap; 
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.6;
+            margin-bottom: 1.5em; /* Added more spacing between feedback sections */
+        }
+        .loading-bar {
+            width: 0;
+            height: 4px;
+            background-color: #3B82F6;
+            position: fixed;
+            top: 0;
+            left: 0;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="loading-bar" id="loadingBar"></div>
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">Student Response Analyzer</h1>
+        <form id="analyzerForm" class="space-y-4">
+            <div>
+                <label for="question" class="block text-sm font-medium text-gray-700">Question:</label>
+                <input type="text" id="question" name="question" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="keywords" class="block text-sm font-medium text-gray-700">Keywords (comma-separated):</label>
+                <input type="text" id="keywords" name="keywords" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            </div>
+            <div>
+                <label for="response" class="block text-sm font-medium text-gray-700">Student Response:</label>
+                <textarea id="response" name="response" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Analyze Response
+            </button>
+        </form>
+        <div id="results" class="mt-8 hidden">
+            <h2 class="text-2xl font-semibold mb-4">Analysis Results:</h2>
+            <div class="mb-4">
+                <h3 class="text-lg font-medium mb-2">Detailed Feedback:</h3>
+                <div id="feedback" class="p-4 bg-gray-100 rounded feedback-content"></div>
+            </div>
+            <div class="mb-4">
+                <h3 class="text-lg font-medium mb-2">Keywords Addressed:</h3>
+                <div id="keywordsAddressed" class="p-2 bg-gray-50 rounded"></div>
+            </div>
+            <div class="flex justify-between">
+                <div class="w-1/2 pr-2">
+                    <h3 class="text-lg font-medium mb-2">Relevance Score:</h3>
+                    <div class="relative pt-1">
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                            <div id="relevanceScore" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"></div>
+                        </div>
+                        <span id="relevanceScoreValue" class="text-sm font-semibold"></span>
+                    </div>
+                </div>
+                <div class="w-1/2 pl-2">
+                    <h3 class="text-lg font-medium mb-2">Sentiment Score:</h3>
+                    <div class="relative pt-1">
+                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-green-200">
+                            <div id="sentimentScore" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500"></div>
+                        </div>
+                        <span id="sentimentScoreValue" class="text-sm font-semibold"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const loadingBar = document.getElementById('loadingBar');
+        let loadingInterval;
+
+        function startLoading() {
+            let width = 0;
+            loadingBar.style.width = '0%';
+            loadingInterval = setInterval(() => {
+                if (width >= 70) {
+                    clearInterval(loadingInterval);
+                } else {
+                    width++;
+                    loadingBar.style.width = width + '%';
+                }
+            }, 50);
+        }
+
+        function stopLoading() {
+            clearInterval(loadingInterval);
+            loadingBar.style.width = '100%';
+            setTimeout(() => {
+                loadingBar.style.width = '0%';
+            }, 300);
+        }
+
+        function formatFeedback(feedback) {
+            const sections = feedback.split(/(?=Feedback \d+\.)/).filter(section => section.trim() !== '');
+            
+            return sections.map(section => {
+                const [title, ...contentParts] = section.split('\n');
+                const content = contentParts.join('\n').trim();
+                return `${title}\n\n${content.replace(/([a-z])(\d+\.)/g, '$1\n\n$2')}`;
+            }).join('\n\n');
+        }
+
+        document.getElementById('analyzerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = {
+                question: document.getElementById('question').value,
+                keywords: document.getElementById('keywords').value,
+                response: document.getElementById('response').value
+            };
+            
+            startLoading();
+            
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                stopLoading();
+                document.getElementById('results').classList.remove('hidden');
+                const feedbackElement = document.getElementById('feedback');
+                feedbackElement.textContent = formatFeedback(data.feedback);
+                document.getElementById('keywordsAddressed').textContent = data.keywords_addressed.join(', ') || 'None';
+                document.getElementById('relevanceScore').style.width = `${data.relevance_score}%`;
+                document.getElementById('relevanceScoreValue').textContent = `${data.relevance_score.toFixed(2)}%`;
+                document.getElementById('sentimentScore').style.width = `${data.sentiment_score}%`;
+                document.getElementById('sentimentScoreValue').textContent = `${data.sentiment_score.toFixed(2)}%`;
+            })
+            .catch((error) => {
+                stopLoading();
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
