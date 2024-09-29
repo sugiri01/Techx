@@ -1,7 +1,7 @@
 Flask==2.1.0
 transformers==4.30.0
 torch==2.4.1+cpu
-torchvision==0.15.2+cpu
+torchvision==0.19.1+cpu
 torchaudio==2.4.1+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 nltk==3.7
