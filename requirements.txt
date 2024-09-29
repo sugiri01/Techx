@@ -4,3 +4,6 @@ Flask-Cors
 requests
 gunicorn
 transformers
+torch
+nltk
+google-generativeai
